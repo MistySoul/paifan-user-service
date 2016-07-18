@@ -1,0 +1,18 @@
+{
+    "db": {
+        "development": {
+            "dialect": "mysql",
+            "username": "paifantest",
+            "password": "123456",
+            "database": "webpaifan",
+            "host": "127.0.0.1"
+        },
+        "production": {
+            "dialect": "mysql",
+            "username": "root",
+            "password": "",
+            "database": "",
+            "host": ""
+        }
+    }
+}
