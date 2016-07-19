@@ -6,6 +6,11 @@ var log4js = require('log4js');
 var log4jslogger = log4js.getLogger('user-service');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var current_env = process.env.NODE_ENV || "development";
+var config = require('./config/config.json');
+
+var redis = require('redis');
+var redisClient = redis.createClient(config['redis-connection'][current_env]);
 
 var routes = require('./routes/index');
 var user = require('./routes/user');
@@ -13,6 +18,14 @@ var user = require('./routes/user');
 var sequelize = require('sequelize');
 
 var app = express();
+
+redisClient.on('ready', res => {
+  log4jslogger.trace('Connected to Redis server.');
+});
+
+redisClient.on('error', err => {
+  log4jslogger.trace('Connected to Redis server failed. ' + err);
+})
 
 if (app.get('env') === 'development') {
   log4js.configure({

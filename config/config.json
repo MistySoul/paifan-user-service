@@ -1,5 +1,5 @@
 {
-    "db": {
+    "mysql-connection": {
         "development": {
             "dialect": "mysql",
             "username": "paifantest",
@@ -13,6 +13,25 @@
             "password": "",
             "database": "",
             "host": ""
+        }
+    },
+    "redis-connection": {
+        "development": {
+            "host": "127.0.0.1",
+            "port": "6379",
+            "db": "1"
+        },
+        "production": {
+            "host": "127.0.0.1",
+            "port": "6379"
+        }
+    },
+    "service-connection": {
+        "development": {
+            "article-service": "http://127.0.0.1:4001/"
+        },
+        "production": {
+
         }
     }
 }
