@@ -20,7 +20,8 @@ module.exports = function (sequelize, DataTypes) {
         timestamps: false,
         classMethods: {
             associate: function (models) {
-                
+                UserFeed.belongsTo(models.User, {as: 'User', foreignKey: 'userId'});
+                UserFeed.belongsTo(models.User, {as: 'SubscribeUser', foreignKey: 'feedUserId'});
             }
         },
         indexes: [

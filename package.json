@@ -16,6 +16,7 @@
     "sequelize": "latest",
     "mysql": "latest",
     "log4js": "latest",
-    "redis": "latest"
+    "redis": "latest",
+    "q": "~1.0"
   }
 }

@@ -1,4 +1,7 @@
 {
+    "product-configuration": {
+        "userCacheExpireTime": "30"
+    },
     "mysql-connection": {
         "development": {
             "dialect": "mysql",
