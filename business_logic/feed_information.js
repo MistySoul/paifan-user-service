@@ -1,6 +1,7 @@
 var models = require('../models');
 var sequelize = require('../models/index').sequelize;
 var feedCache = require('./feed_cache');
+var articleCache = require('./article_cache');
 var logger = require('log4js').getLogger('user-service');
 var path = require('path');
 var config = require(path.join(__dirname, '..', 'config', 'config.json'))['product-configuration'];
@@ -8,6 +9,7 @@ var pageSize = config['pageSize'];
 var maxFeedCount = config['maxFeedCount'];
 var meta = require('../config/metadata.json')['old_db'];
 var approvedArticleStatus = meta['approved-article-status-id'];
+var Q = require('q');
 
 var self = this;
 
@@ -63,6 +65,23 @@ exports.getFeedsFromDb = function (userId, startIndex, count) {
         type: sequelize.QueryTypes.SELECT
     }).then(results => {
         return results;
+    });
+};
+
+/*
+    This is an internal method to fetch the summaries of articles.
+    It will first search them in cache, and get the uncached articles from the Article Service and caches them.
+*/
+exports.getArticleSummary = function (articleCacheArray) {
+    var summaries = [];
+    var cachePromises = [];
+
+    articleCacheArray.forEach(t => cachePromises.push(articleCache.getArticleSummaryByArticleId(t.id)), self);
+
+    Q.all(cachePromises).then(results => {
+
+    }).catch(err => {
+
     });
 }
 
