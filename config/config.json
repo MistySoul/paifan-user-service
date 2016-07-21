@@ -1,6 +1,10 @@
 {
     "product-configuration": {
-        "userCacheExpireTime": "30"
+        "userCacheExpireTime": 24,  
+        "feedCacheExpireTime": 24,
+        "articleCacheExpireTime": 24,
+        "pageSize": 10,
+        "maxFeedCount": 500
     },
     "mysql-connection": {
         "development": {

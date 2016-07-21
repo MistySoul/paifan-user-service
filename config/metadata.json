@@ -1,5 +1,6 @@
 {
     "old_db": {
-        "active-user-status-id": 1
+        "active-user-status-id": 1,
+        "approved-article-status-id": 4
     }
 }

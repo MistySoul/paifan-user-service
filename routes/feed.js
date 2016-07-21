@@ -8,29 +8,31 @@ var Q = require('q');
 /*
     Gets the latest articles (activities and live in the furture) that the user has been subscribed.
     Parameters: userId, pageNumber
-    Response: an array of the latest articles (grouped by authors) of each author that latest published (max 3 articles for each author).
-              The authors are sorted in descending order of the time which latest article was published. 
+    Response: an array of the latest articles in descending order.
 */
 router.get('/list/:userId/:pageNumber', function(req, res, next) {
     /*
         Steps:
-            1. Finds out the users that has been subscribed.
-            2. Sorts these users by the latest article published time in descending order.
-            3. According to the pager information, finds out the latest 3 articles these users published and return.
-            
-        For steps 2 and 3, we will search it in the cache first (which stores in the Redis database and has an expiration time of 30 minutes).
-            If not hits, process them in the MySQL database and save them in our cache.
+            1. Do a quick look in our cache to see whether we have cached it already. if so, simply return.
+            2. If no cache is present, finds out the articles in our db and store them to the cache.
+                (Currently we have this in this service).
+        
+        Note if the user subscribe/unsubscribe someone, the cache is no longer valid and needs to be refreshed.
     */
     var userId = req.params.userId;
-    var pageNumber = req.params.pageNumber;
+    var pageNumber = parseInt(req.params.pageNumber);
 
     userInformation.getById(userId, true).then(user => {
         if (user == null || user.status != meta['active-user-status-id']) {
             throw new Error('参数无效：操作的用户不存在或已被停用。');
         }
 
-        
-    })
+        return feedInformation.getFeedListByUserId(userId, pageNumber);
+    }).then(list => {
+        res.send(list);
+    }).catch(err => {
+        return next(err);
+    });
 });
 
 /*

@@ -17,6 +17,7 @@
     "mysql": "latest",
     "log4js": "latest",
     "redis": "latest",
-    "q": "~1.0"
+    "q": "~1.0",
+    "bluebird": "latest"
   }
 }
