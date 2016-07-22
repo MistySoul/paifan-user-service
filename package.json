@@ -18,6 +18,8 @@
     "log4js": "latest",
     "redis": "latest",
     "q": "~1.0",
-    "bluebird": "latest"
+    "bluebird": "latest",
+    "request": "latest",
+    "querystring": "latest"
   }
 }

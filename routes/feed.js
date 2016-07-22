@@ -26,8 +26,10 @@ router.get('/list/:userId/:pageNumber', function(req, res, next) {
         if (user == null || user.status != meta['active-user-status-id']) {
             throw new Error('参数无效：操作的用户不存在或已被停用。');
         }
-
         return feedInformation.getFeedListByUserId(userId, pageNumber);
+    }).then(cache => {
+        // Gets the summary of these articles
+        return feedInformation.getArticlesSummary(cache);
     }).then(list => {
         res.send(list);
     }).catch(err => {
@@ -48,7 +50,7 @@ router.get('/userslist/:userId', function(req, res, next) {
             throw new Error('参数无效：操作的用户不存在或已被停用。');
         }
 
-        return feedInformation.getFeededUsersByUserId(userId);
+        return feedInformation.getFeededUsersIdByUserId(userId);
     }).then(users => {
         if (users == null) {
             res.send([]);

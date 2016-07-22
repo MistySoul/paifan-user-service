@@ -38,10 +38,13 @@ exports.getFeedListByUserId = function (userId, startIndex, endIndex) {
                 return [];
 
             if (list) {
-                return redis.expireAsync(feedKey, expireTime).then(res => {
-                    logger.trace('Set expire time: ' + res);
-                    return list;
+                redis.expireAsync(feedKey, expireTime).then(res => {
+                    //logger.trace('Set expire time: ' + res);
+                }).catch(err => {
+                    logger.trace('Set expire time failed for feed cache: ' + err);
                 });
+                
+                return list;
             } else {
                 return null;
             }
@@ -61,6 +64,28 @@ exports.setFeedList = function (userId, articles) {
             return count;
         });
     });
+};
+
+exports.removeFeedList = function (userId) {
+    var feedKey = getFeedKey(userId);
+
+    return redis.delAsync(feedKey).then(count => {
+        return count;
+    });
+};
+
+exports.addItemToFeedList = function (userId, feedItem) {
+    var feedKey = getFeedKey(userId);
+
+    return redis.lpushxAsync(feedKey, JSON.stringify(feedItem)).then(count => {
+        return count;
+    }).catch(err => {
+        logger.error('Failed to add new article to cache: ');
+    });
+};
+
+exports.removeItemFromFeedList = function (userId, feedItem) {
+    
 };
 
 var jsonifyArray = function (array) {

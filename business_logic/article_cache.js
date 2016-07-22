@@ -13,16 +13,23 @@ var getArticleSummaryKey = function (articleId) {
 /*
     Gets the summary of the article in cache.
     Parameters: articleId, mark (any object that will be returned directly which the caller could be identify the article)
-    Returns: null (if cache misses) or article summary, mark
+    Returns: An object {summary: null (if cache misses) or article summary, mark: mark } if mark == true, otherwise the summary object.
 */
 exports.getArticleSummaryByArticleId = function (articleId, mark) {
     var key = getArticleSummaryKey(articleId);
 
     return redis.getAsync(key).then(article => {
-        return article;
-    }).catch(err => {
+        redis.expireAsync(key, expireTime).then(res => {
+            //logger.trace('Set expire time: ' + res);
+        }).catch(err => {
+            logger.trace('Set expire time failed for article cache: ' + err);
+        });
+        
+        if (mark !== undefined) return { summary: article, mark: mark }; else return article;
+    })  //.delay(Math.random() * 1000) // for test only!
+    .catch(err => {
         logger.err('Error while fetching article cache: '+ err);
-        return null;
+        if (mark !== undefined) return { summary: null, mark: mark }; else return null;
     });
 }
 
@@ -32,7 +39,7 @@ exports.setArticleSummary = function (summary, articleId) {
 
     var key = getArticleSummaryKey(articleId);
 
-    return redis.setAsync(key, summary).then(result => {
+    return redis.setexAsync(key, expireTime, JSON.stringify(summary)).then(result => {
         return result;
     }).catch(err => {
         logger.error('Error while putting article cache: ' + err);

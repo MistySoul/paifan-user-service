@@ -1,0 +1,5 @@
+{
+    "article-service": {
+        "getArticlesSummary": "/article/summary/bundle/:articleArray"
+    }
+}
