@@ -2,15 +2,16 @@ var redis = require('../redis-db');
 var path = require('path');
 var config = require(path.join(__dirname, '..', 'config', 'config.json'))['product-configuration'];
 var pageSize = config['pageSize'] || 10;
-var expireTime = parseInt(config['userCacheExpireTime']) * 60 * 60; 
+var expireTime = parseInt(config['feedCacheExpireTime']) * 60 * 60; 
 var logger = require('log4js').getLogger('user-service');
+var common = require('./common');
 
 var self = this;
 /*
     Feed Redis cache.
     Caches the latest article list subscribed by a user.
     Keys: 'feed-articles:' + userId
-    Values: { "id": articleId, "uid": userId, "t": publishTime }
+    Values: { "id": articleId, "userId": userId, "createTime": publishTime }
 
     If there is only one element in the array and is an string value of "0",
         it indicates there is no feeds for this user. (Not meaning it has not been cached)
@@ -59,7 +60,7 @@ exports.setFeedList = function (userId, articles) {
         Because rpush does not allow an empty array, so we will have to find a workaround to identify no feed articles.
         An one element list with "0" in it indicates an empty list.
     */
-    return redis.rpushAsync(feedKey, jsonifyArray(articles)).then(count => {
+    return redis.rpushAsync(feedKey, common.jsonifyArray(articles)).then(count => {
         return redis.expireAsync(feedKey, expireTime).then(res => {
             return count;
         });
@@ -86,19 +87,4 @@ exports.addItemToFeedList = function (userId, feedItem) {
 
 exports.removeItemFromFeedList = function (userId, feedItem) {
     
-};
-
-var jsonifyArray = function (array) {
-    var result = [];
-
-    if (array == null || array.length == 0) {
-        result.push("0");
-        return result;
-    }
-
-    for (var i = 0; i < array.length; i++) {
-        result.push(JSON.stringify(array[i]));
-    }
-
-    return result;
 };

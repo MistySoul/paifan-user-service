@@ -11,6 +11,7 @@ var maxFeedCount = config['maxFeedCount'];
 var meta = require('../config/metadata.json')['old_db'];
 var approvedArticleStatus = meta['approved-article-status-id'];
 var Q = require('q');
+var common = require('./common');
 
 var self = this;
 
@@ -29,7 +30,7 @@ exports.getFeedListByUserId = function (userId, pageNumber) {
             if (res.length == 0) {
                 return [];
             } else {
-                return getRangeOfArray(res, 0, res.length - 1, true);
+                return common.getRangeOfArray(res, 0, res.length - 1, true);
             }
         else {
             // No cache avaiable, search in DB.
@@ -37,17 +38,17 @@ exports.getFeedListByUserId = function (userId, pageNumber) {
                 feedCache.setFeedList(userId, feeds).then(res => {
                     logger.trace('Feed list for user id: ' + userId + ' successfully wrote to cache with count: ' + feeds.length);
                 }).catch(err => {
-                    logger.error('Feed list for user id: ' + userId + ' FAILED: ' + err);
+                    logger.error('Set feed list cache for user id: ' + userId + ' FAILED: ' + err);
                 });
 
-                return getRangeOfArray(feeds, startIndex, startIndex + pageSize - 1);
+                return common.getRangeOfArray(feeds, startIndex, startIndex + pageSize - 1);
             });
         }
     }).catch(err => {
         // There is an error while accessing the cache, log it and search in DB
         logger.error('Failed to get feed list from cache: ' + err);
-        return self.getFeedsFromDb(userId, 0, maxFeedCount).then(feeds => {
-            return getRangeOfArray(feeds, startIndex, startIndex + pageSize - 1);
+        return self.getFeedsFromDb(userId, startIndex, pageSize).then(feeds => {
+            return common.getRangeOfArray(feeds, 0, pageSize - 1);
         });
     });
 };
@@ -62,7 +63,7 @@ SELECT a.id, a.author, a.createTime FROM UserFeed uf
 WHERE
     uf.userId = ? AND a.auditStatus = ?
 ORDER BY a.createTime DESC
-LIMIT ?, ?
+LIMIT ?, ?;
 `;
 exports.getFeedsFromDb = function (userId, startIndex, count) {
     return sequelize.query(getFeedsRawQuery, {
@@ -70,72 +71,6 @@ exports.getFeedsFromDb = function (userId, startIndex, count) {
         type: sequelize.QueryTypes.SELECT
     }).then(results => {
         return results;
-    });
-};
-
-/*
-    This is an internal method to fetch the summaries of articles.
-    It will first search them in cache, and get the uncached articles from the Article Service and caches them.
-    TO-DO: Handle caches are not avaiable. Perhaps simple call the Article Service to get the summaries.
-*/
-exports.getArticlesSummary = function (articleCacheArray) {
-    var summaries = [];
-    var cachePromises = [];
-    
-    // Note we will have to keep the return values as the same order in the cache,
-    // the index parameter is used to store the position in the cache. 
-    // Not necessary, the promise library will give the results in order!
-    articleCacheArray.forEach((t, index, array) => cachePromises.push(articleCache.getArticleSummaryByArticleId(t.id, index)), self);
-
-    return Q.all(cachePromises).then(results => {
-        // Some of the articles may not be cached, therefore we need to request them from the Article Service.
-        var uncachedArticleIds = [];
-        
-        results.forEach(r => {
-            if (r.summary != null) {
-                // In cache, write it to the cache object
-                articleCacheArray[r.mark].summary = r.summary;
-                // The mark is unnecessary! The results are already been sorted by Q library!!!
-            } else {
-                uncachedArticleIds.push(articleCacheArray[r.mark].id);
-            }
-        }, this);
-
-        logger.trace('Got summary of the articles from the cache, ' + uncachedArticleIds + ' articles are not in cache.');
-
-        //Send a request to the Article Service to get the summary of uncached articles.
-        if (uncachedArticleIds.length > 0) {
-            return articleService.requestArticlesSummary(uncachedArticleIds).then(summaries => {
-                var cacheWritePromises = [];
-                // Put the articles to the cache
-                summaries.forEach(s => {
-                    cacheWritePromises.push(articleCache.setArticleSummary(s, s.id));
-
-                    // Place it to the result array
-                    for (var i = 0; i < articleCacheArray.length; i++) {
-                        if (s.id == articleCacheArray[i].id) {
-                            articleCacheArray[i].summary = s;
-                            break;
-                        }
-                    }
-                });
-
-                Q.all(cacheWritePromises).then(results => {
-                    logger.trace('Wrote summary of ' + results.length + ' articles to the cache.');
-                }).catch(err => {
-                    logger.error('Error writing articles summary to the cache: ' + err);
-                });
-
-                return articleCacheArray;
-            });
-        } else  {
-            // All articles in cache, simply return.
-            return articleCacheArray;
-        }
-            
-    }).catch(err => {
-        logger.error('Error while get article summaries: ' + err);
-        throw err;
     });
 };
 
@@ -227,21 +162,4 @@ exports.unsubscribeUser = function (userId, subscribeUserId) {
 
         return count;
     });
-};
-
-var getRangeOfArray = function(array, startIndex, endIndex, deserializeJson) {
-    var result = [];
-
-    if (array == null)
-        return result;
-
-    if (deserializeJson) {
-        for (var i = startIndex; i <= endIndex && i < array.length; i++) 
-            result.push(JSON.parse(array[i]));
-    } else {
-        for (var i = startIndex; i <= endIndex && i < array.length; i++) 
-            result.push(array[i]);
-    }
-
-    return result;
 };

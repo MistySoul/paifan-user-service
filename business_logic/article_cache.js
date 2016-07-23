@@ -8,7 +8,7 @@ var self = this;
 
 var getArticleSummaryKey = function (articleId) {
     return 'article-summary:' + articleId;
-}
+};
 
 /*
     Gets the summary of the article in cache.
@@ -28,7 +28,7 @@ exports.getArticleSummaryByArticleId = function (articleId, mark) {
         if (mark !== undefined) return { summary: article, mark: mark }; else return article;
     })  //.delay(Math.random() * 1000) // for test only!
     .catch(err => {
-        logger.err('Error while fetching article cache: '+ err);
+        logger.error('Error while fetching article cache: '+ err);
         if (mark !== undefined) return { summary: null, mark: mark }; else return null;
     });
 }

@@ -2,7 +2,8 @@ var express = require('express');
 var router = express.Router();
 var meta = require('../config/metadata.json')['old_db'];
 var userInformation = require('../business_logic/user_information');
-var feedInformation = require('../business_logic/feed_information')
+var feedInformation = require('../business_logic/feed_information');
+var articleInformation = require('../business_logic/article_information');
 var Q = require('q');
 
 /*
@@ -29,7 +30,7 @@ router.get('/list/:userId/:pageNumber', function(req, res, next) {
         return feedInformation.getFeedListByUserId(userId, pageNumber);
     }).then(cache => {
         // Gets the summary of these articles
-        return feedInformation.getArticlesSummary(cache);
+        return articleInformation.getArticlesSummary(cache);
     }).then(list => {
         res.send(list);
     }).catch(err => {
@@ -53,9 +54,9 @@ router.get('/userslist/:userId', function(req, res, next) {
         return feedInformation.getFeededUsersIdByUserId(userId);
     }).then(users => {
         if (users == null) {
-            res.send([]);
+            res.send({ subscribingUsers: [] });
         } else {
-            res.send(users);
+            res.send({ subscribingUsers: users} );
         }
     }).catch(err => {
         return next(err);

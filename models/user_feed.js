@@ -31,7 +31,7 @@ module.exports = function (sequelize, DataTypes) {
             }, 
             {
                 name: 'user_feed_feed_user_id',
-                fields: ['feed_userId']
+                fields: ['feedUserId']
             }
         ]
     });
