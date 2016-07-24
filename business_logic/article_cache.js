@@ -22,10 +22,10 @@ exports.getArticleSummaryByArticleId = function (articleId, mark) {
         redis.expireAsync(key, expireTime).then(res => {
             //logger.trace('Set expire time: ' + res);
         }).catch(err => {
-            logger.trace('Set expire time failed for article cache: ' + err);
+            logger.error('Set expire time failed for article cache: ' + err);
         });
         
-        if (mark !== undefined) return { summary: JSON.parse(article), mark: mark }; else return article;
+        if (mark !== undefined) return { summary: JSON.parse(article), mark: mark }; else return JSON.parse(article);
     })  //.delay(Math.random() * 1000) // for test only!
     .catch(err => {
         logger.error('Error while fetching article cache: '+ err);

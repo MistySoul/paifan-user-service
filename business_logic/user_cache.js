@@ -11,6 +11,10 @@ var getUserArticlesKey = function (userId) {
     return 'user-articles:' + userId
 };
 
+var getUserInformationKey = function (userId) {
+    return 'user:' + userId;
+}
+
 /*
     Gets the articles published by the user in the cache.
 
@@ -69,4 +73,32 @@ exports.addArticleToUserArticlesList = function (userId, articleItem) {
     }).catch(err => {
         logger.error('Failed to add new article to user cache: ');
     });
+}
+
+exports.setUserInformation = function (userId, information) {
+    var key = getUserInformationKey(userId);
+    return redis.setexAsync(key, expireTime, JSON.stringify(information)).then(count => {
+        return count;
+    }).catch(err => {
+        logger.error('Failed to add new user information to cache: ' + err);
+    });
+}
+
+exports.getUserInformation = function (userId) {
+    var key = getUserInformationKey(key);
+
+    return redis.existsAsync(key).then(exists => {
+        if (exists !== 1)
+            return null;
+
+        return redis.getAsync(key).then(information => {
+            redis.expireAsync(key, expireTime).then(res => {
+            }).catch(err => {
+                logger.error('Set expire time failed for user information cache: ' + err);
+            });
+
+            return JSON.parse(information);
+        });
+    });
+
 }

@@ -11,6 +11,7 @@ var path = require('path');
 var config = require(path.join(__dirname, '..', 'config', 'config.json'))['product-configuration'];
 var pageSize = config['pageSize'];
 var common = require('./common');
+var userInformation = require('./user_information');
 
 var self = this;
 
@@ -85,12 +86,12 @@ exports.getArticlesSummary = function (articleCacheArray) {
     });
 };
 
-/*
-    Gets the latest articles (only ids) published by the user.
-    
-    Steps:
-        1. Search the list in the user cache, if hits, simple return.
-        2. If not in cache, search it in DB (max 500 articles) to get the ids and save it in cache.
+/**
+ *  Gets the latest articles (only ids) published by the user.
+ *  
+ *  Steps:
+ *      1. Search the list in the user cache, if hits, simple return.
+ *      2. If not in cache, search it in DB (max 500 articles) to get the ids and save it in cache.
 */
 exports.getUserArticles = function (userId, pageNumber) {
     var startIndex = pageNumber * pageSize;
@@ -116,6 +117,20 @@ exports.getUserArticles = function (userId, pageNumber) {
         return self.getUserArticlesFromDb(userId, startIndex, pageSize).then(articles => {
             return common.getRangeOfArray(articles, 0, pageSize - 1);
         });
+    });
+}
+
+/**
+ * According to "author" field in the summary, fill the corresponding user information to the nested object.
+ * Returns: summaries with user information in "user" field.
+ */
+exports.writeUserInformation = function (summaries) {
+    var promises = [];
+    summaries.forEach(s => promises.push(userInformation.getById(s.author)), this);
+
+    return Q.all(promises).then(results => {
+        results.forEach((user, index) => summaries[index].user = user);
+        return summaries;
     });
 }
 

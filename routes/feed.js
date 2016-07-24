@@ -31,8 +31,10 @@ router.get('/list/:userId/:pageNumber', function(req, res, next) {
     }).then(cache => {
         // Gets the summary of these articles
         return articleInformation.getArticlesSummary(cache);
+    }).then(summaries => {
+        return articleInformation.writeUserInformation(summaries);
     }).then(list => {
-        res.send(list);
+        res.send({articles: list});
     }).catch(err => {
         return next(err);
     });
