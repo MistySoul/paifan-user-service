@@ -76,7 +76,7 @@ exports.getArticlesSummary = function (articleCacheArray) {
             
     }).then(articleCacheArray => {
         var summaries = [];
-        articleCacheArray.forEach(c => summaries.push(JSON.parse(c.summary)), this);
+        articleCacheArray.forEach(c => summaries.push(c.summary), this);
 
         return summaries;
     }).catch(err => {

@@ -25,7 +25,7 @@ exports.getArticleSummaryByArticleId = function (articleId, mark) {
             logger.trace('Set expire time failed for article cache: ' + err);
         });
         
-        if (mark !== undefined) return { summary: article, mark: mark }; else return article;
+        if (mark !== undefined) return { summary: JSON.parse(article), mark: mark }; else return article;
     })  //.delay(Math.random() * 1000) // for test only!
     .catch(err => {
         logger.error('Error while fetching article cache: '+ err);
