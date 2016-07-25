@@ -43,4 +43,8 @@ router.get('/articles/:userId/:pageNumber', function(req, res, next) {
     });
 });
 
+router.post('/articles/publish', function(req, res, next) {
+
+});
+
 module.exports = router;

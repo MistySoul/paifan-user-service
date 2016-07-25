@@ -38,7 +38,9 @@ exports.getFeedListByUserId = function (userId, startIndex, endIndex) {
             if (list && ((list.length == 1 && list[0] === "0") || list.length == 0))
                 return [];
 
-            if (list) {
+            // If not setting this, the cache will be expired after a certain time.
+            // Otherwise each time user access the feed list, the expire time resets.
+            if (list && config['processNewArticleOn']) {
                 redis.expireAsync(feedKey, expireTime).then(res => {
                     //logger.trace('Set expire time: ' + res);
                 }).catch(err => {
@@ -82,6 +84,7 @@ exports.addItemToFeedList = function (userId, feedItem) {
         return count;
     }).catch(err => {
         logger.error('Failed to add new article to cache: ');
+        return -1;
     });
 };
 

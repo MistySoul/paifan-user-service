@@ -40,7 +40,7 @@ exports.getUserArticlesByUserId = function (userId, startIndex, endIndex) {
             if (list && ((list.length == 1 && list[0] === "0") || list.length == 0))
                 return [];
 
-            if (list) {
+            if (list && config['processNewArticleOn']) {
                 redis.expireAsync(key, expireTime).then(res => {
                     // don't care
                 }).catch(err => {

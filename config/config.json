@@ -1,8 +1,9 @@
 {
     "product-configuration": {
         "userCacheExpireTime": 48,  
-        "feedCacheExpireTime": 24,
+        "feedCacheExpireTime": 1,
         "articleCacheExpireTime": 24,
+        "processNewArticleOn": false,
         "pageSize": 10,
         "maxFeedCount": 500,
         "httpTimeout": 50000

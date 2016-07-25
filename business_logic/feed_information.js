@@ -113,8 +113,17 @@ exports.getSubscribingUsersByUserId = function (userId) {
        In the furture we will use a message queue and find a better way to update the cache (maybe a seperate low priority background process).
 */
 exports.processNewArticlePublished = function (article) {
-    self.getSubscribingUsersIdByUserId(article.author).then(users => {
-        
+    return self.getSubscribingUsersByUserId(article.author).then(users => {
+        if (users == null || users.length == 0)
+            return 0;
+
+        users.forEach(user => {
+            // Just push the promises and directly return.
+            feedCache.addItemToFeedList(users.userId, article).then(result => {
+            });
+        }, this);
+
+        return 1;
     });
 };
 
