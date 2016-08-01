@@ -37,7 +37,7 @@ exports.getById = function (userId, noSimplify) {
 
         return information;
     });
-}
+};
 
 exports.getByIdFromDb = function (userId) {
     return models.User.findOne({

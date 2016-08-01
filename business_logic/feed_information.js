@@ -172,3 +172,25 @@ exports.unsubscribeUser = function (userId, subscribeUserId) {
         return count;
     });
 };
+
+/**
+ * After a subscribing/unsubscribing operation is processed,
+ * refresh the subscribing count of a user in the cache.
+ */
+var updateSubscribingCount = function (userId) {
+    
+}
+
+/**
+ * Gets the number of subscribers of this user.
+ */
+exports.getSubscribingUsersCountFromDb = function (userId) {
+    return models.UserFeed.findAll({
+        attributes: [[sequelize.fn('COUNT', sequelize.col('userId')), 'c_user']],
+        where: {
+            feedUserId: userId
+        }
+    }).then(result => {
+        return result.c_user;
+    });
+};
