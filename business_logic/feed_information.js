@@ -2,6 +2,7 @@ var models = require('../models');
 var sequelize = require('../models/index').sequelize;
 var feedCache = require('./feed_cache');
 var articleCache = require('./article_cache');
+var userCache = require('./user_cache');
 var articleService = require('../interfaces/article_service_interface');
 var logger = require('log4js').getLogger('user-service');
 var path = require('path');
@@ -152,6 +153,8 @@ exports.subscribeUser = function (userId, subscribeUserId) {
             logger.error('Error while removing user feed cache: ' + err);
         });
 
+        userCache.increaseUserSubscribersCount(subscribeUserId, 1);
+
         return created;
     });
 };
@@ -168,6 +171,8 @@ exports.unsubscribeUser = function (userId, subscribeUserId) {
         }).catch(err => {
             logger.error('Error while removing user feed cache: ' + err);
         });
+
+        userCache.increaseUserSubscribersCount(subscribeUserId, -1);
 
         return count;
     });
@@ -190,7 +195,10 @@ exports.getSubscribingUsersCountFromDb = function (userId) {
         where: {
             feedUserId: userId
         }
-    }).then(result => {
-        return result.c_user;
+    }).then(results => {
+        if (results == null || results.length == 0 || results[0].dataValues.c_user == null || results[0].dataValues.c_user == undefined)
+            return 0;
+
+        return results[0].dataValues.c_user;
     });
 };

@@ -157,13 +157,16 @@ exports.getUserArticlesFromDb = function (userId, startIndex, count) {
  * TODO: Fetches this in UserPublish table.
  */
 var getUserArticleCountRawQuery = `
-SELECT COUNT(id) AS c_article FROM s_suit WHERE author = ?;
+SELECT COUNT(id) AS c_article FROM suit WHERE author = ? AND auditStatus = ?;
 `;
-exports.getSubscribingUsersCountFromDb = function (userId) {
+exports.getArticleCountFromDb = function (userId) {
     return sequelize.query(getUserArticleCountRawQuery, {
-        replacements: [userId],
+        replacements: [userId, approvedArticleStatus],
         type: sequelize.QueryTypes.SELECT
-    }).then(result => {
-        return result.c_article;
+    }).then(results => {
+        if (results == null || results.length == 0 || results[0].c_article == null || results[0].c_article == undefined)
+            return 0;
+
+        return results[0].c_article;
     });
 };

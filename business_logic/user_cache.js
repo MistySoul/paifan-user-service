@@ -1,7 +1,7 @@
 var redis = require('../redis-db');
 var path = require('path');
 var config = require(path.join(__dirname, '..', 'config', 'config.json'))['product-configuration'];
-var expireTime = parseInt(config['userCacheExpireTime']) * 60 * 60; 
+var expireTime = parseFloat(config['userCacheExpireTime']) * 60 * 60; 
 var logger = require('log4js').getLogger('user-service');
 var common = require('./common');
 
@@ -13,6 +13,10 @@ var getUserArticlesKey = function (userId) {
 
 var getUserInformationKey = function (userId) {
     return 'user:' + userId;
+}
+
+var getUserSubscribersCountKey = function (userId) {
+    return 'user-subscribers-count:' + userId;
 }
 
 /*
@@ -65,15 +69,51 @@ exports.setUserArticlesList = function (userId, articles) {
     });
 };
 
+/**
+ * Increase or descrease (if negative number provided) the subscribers count in the cache.
+ * Returns: The subscribers count, or null if cache misses.
+ */
+exports.increaseUserSubscribersCount = function (userId, increment) {
+    var key = getUserSubscribersCountKey(userId);
+
+    return redis.existsAsync(key).then(exists => {
+        if (exists !== 1) 
+            return null;
+
+        return redis.incrbyAsync(key, increment);
+    });
+};
+
+/**
+ * Gets the subscribers count of a user in the cache.
+ * Returns: Subscribers count, or null if cache misses.
+ */
+exports.getUserSubscribersCount = function (userId) {
+    var key = getUserSubscribersCountKey(userId);
+
+    return redis.existsAsync(key).then(exists => {
+        if (exists !== 1) 
+            return null;
+
+        return redis.getAsync(key);
+    });
+};
+
+exports.setUserSubscriberCount = function (userId, subscribersCount) {
+    var key = getUserSubscribersCountKey(userId);
+
+    return redis.setexAsync(key, expireTime, subscribersCount);
+};
+
 exports.addArticleToUserArticlesList = function (userId, articleItem) {
-    var key = getUserArticlesKey(userId);
+    var key = getUserSubscribersCountKey(userId);
 
     return redis.lpushxAsync(key, JSON.stringify(feedItem)).then(count => {
         return count;
     }).catch(err => {
         logger.error('Failed to add new article to user cache: ');
     });
-}
+};
 
 exports.setUserInformation = function (userId, information) {
     var key = getUserInformationKey(userId);
@@ -82,7 +122,7 @@ exports.setUserInformation = function (userId, information) {
     }).catch(err => {
         logger.error('Failed to add new user information to cache: ' + err);
     });
-}
+};
 
 exports.getUserInformation = function (userId) {
     var key = getUserInformationKey(key);
