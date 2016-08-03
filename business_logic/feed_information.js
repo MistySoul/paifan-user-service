@@ -153,7 +153,7 @@ exports.subscribeUser = function (userId, subscribeUserId) {
             logger.error('Error while removing user feed cache: ' + err);
         });
 
-        userCache.increaseUserSubscribersCount(subscribeUserId, 1);
+        userCache.increaseUserSubscribersCount(subscribeUserId, created === 1 ? 1 : 0);
 
         return created;
     });
@@ -172,7 +172,7 @@ exports.unsubscribeUser = function (userId, subscribeUserId) {
             logger.error('Error while removing user feed cache: ' + err);
         });
 
-        userCache.increaseUserSubscribersCount(subscribeUserId, -1);
+        userCache.increaseUserSubscribersCount(subscribeUserId, count > 0 ? -1 : 0);
 
         return count;
     });
