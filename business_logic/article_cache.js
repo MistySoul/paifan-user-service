@@ -6,6 +6,11 @@ var logger = require('log4js').getLogger('user-service');
 
 var self = this;
 
+/** *** Cache summary ***
+ * This cache stores below information:
+ * * article-summary:id  --  string (json) value  --  The summary of a summary, which includes classify types.
+ */
+
 var getArticleSummaryKey = function (articleId) {
     return 'article-summary:' + articleId;
 };

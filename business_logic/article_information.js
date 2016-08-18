@@ -93,16 +93,19 @@ exports.getArticlesSummary = function (articleCacheArray) {
  *      1. Search the list in the user cache, if hits, simple return.
  *      2. If not in cache, search it in DB (max 500 articles) to get the ids and save it in cache.
 */
-exports.getUserArticles = function (userId, pageNumber) {
+exports.getUserArticles = function (userId, classifyId, pageNumber) {
+    classifyId = classifyId || 0;
+    pageNumber = parseInt(pageNumber);
+
     var startIndex = pageNumber * pageSize;
     
-    return userCache.getUserArticlesByUserId(userId, startIndex, startIndex + pageSize - 1).then(articles => {
+    return userCache.getUserArticlesByUserId(userId, classifyId, startIndex, startIndex + pageSize - 1).then(articles => {
         if (articles != null)  // Cache hits, return it.
             return common.getRangeOfArray(articles, 0, articles.length - 1, true);
         else {
             //Search in DB and store it in cache. Hard code the count now...
-            return self.getUserArticlesFromDb(userId, 0, 500).then(articles => {
-                userCache.setUserArticlesList(userId, articles).then(res => {
+            return self.getUserArticlesFromDb(userId, classifyId, 0, 500).then(articles => {
+                userCache.setUserArticlesList(userId, classifyId, articles).then(res => {
                     logger.trace('User article list for user id: ' + userId + ' successfully wrote to cache with count: ' + articles.length);
                 }).catch(err => {
                     logger.error('Set article list cache for user id: ' + userId + ' FAILED: ' + err);
@@ -114,7 +117,7 @@ exports.getUserArticles = function (userId, pageNumber) {
     }).catch(err => {
         // There is an error while accessing the cache, log it and search in DB
         logger.error('Failed to get article list from cache: ' + err);
-        return self.getUserArticlesFromDb(userId, startIndex, pageSize).then(articles => {
+        return self.getUserArticlesFromDb(userId, classifyId, startIndex, pageSize).then(articles => {
             return common.getRangeOfArray(articles, 0, pageSize - 1);
         });
     });
@@ -139,14 +142,18 @@ exports.writeUserInformation = function (summaries) {
     Since it hasn't implemented now, search the Article table instead.
 */
 var getUserArticlesRawQuery = `
-SELECT id, createTime FROM suit
-    WHERE author = ? AND auditStatus = ?
+SELECT DISTINCT s.id, s.createTime FROM suit s
+INNER JOIN suit_classify sc ON s.id = sc.suitId
+    WHERE author = ? AND auditStatus = ? AND (? = 0 OR sc.classifyId = ?)
 ORDER BY createTime DESC
 LIMIT ?, ?;
 `;
-exports.getUserArticlesFromDb = function (userId, startIndex, count) {
+exports.getUserArticlesFromDb = function (userId, classifyId, startIndex, count) {
+    classifyId = parseInt(classifyId);
+    userId = parseInt(userId);
+
     return sequelize.query(getUserArticlesRawQuery, {
-        replacements: [userId, approvedArticleStatus, startIndex, count],
+        replacements: [userId, approvedArticleStatus, classifyId, classifyId, startIndex, count],
         type: sequelize.QueryTypes.SELECT
     }).then(results => {
         return results;

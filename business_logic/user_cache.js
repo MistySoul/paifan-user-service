@@ -7,8 +7,11 @@ var common = require('./common');
 
 var self = this;
 
-var getUserArticlesKey = function (userId) {
-    return 'user-articles:' + userId
+var getUserArticlesKey = function (userId, classifyId) {
+    if (classifyId == 0 || classifyId == undefined) {
+        return 'user-articles:' + userId;
+    }
+    return 'user-articles:' + userId + ',classifyId:' + classifyId;
 };
 
 var getUserInformationKey = function (userId) {
@@ -28,10 +31,11 @@ var getUserSubscribersCountKey = function (userId) {
     Therefore we should to take care of the "0" when modifying the cache list.
 
     Parameters: userId
+                classifyId: if 0, fetches all articles for this user.
     Returns: An object array [{articleId, createTime}], or null (not empty list!) if not in cache.
 */
-exports.getUserArticlesByUserId = function (userId, startIndex, endIndex) {
-    var key = getUserArticlesKey(userId);
+exports.getUserArticlesByUserId = function (userId, classifyId, startIndex, endIndex) {
+    var key = getUserArticlesKey(userId, classifyId);
 
     return redis.existsAsync(key).then(exists => {
         if (exists !== 1)
@@ -59,8 +63,8 @@ exports.getUserArticlesByUserId = function (userId, startIndex, endIndex) {
     });
 };
 
-exports.setUserArticlesList = function (userId, articles) {
-    var key = getUserArticlesKey(userId);
+exports.setUserArticlesList = function (userId, classifyId, articles) {
+    var key = getUserArticlesKey(userId, classifyId);
 
     return redis.rpushAsync(key, common.jsonifyArray(articles)).then(count => {
         return redis.expireAsync(key, expireTime).then(res => {

@@ -30,7 +30,29 @@ router.get('/articles/:userId/:pageNumber', function(req, res, next) {
         if (user == null) {
             throw new Error('参数无效：操作的用户不存在。');
         }
-        return articleInformation.getUserArticles(uid, pageNumber).then(cache => {
+        return articleInformation.getUserArticles(uid, 0, pageNumber).then(cache => {
+            return articleInformation.getArticlesSummary(cache);
+        }).then(list => {
+            return res.send({
+                user: user,
+                articles: list
+            });
+        });
+    }).catch(err => {
+        return next(err);
+    });
+});
+
+router.get('/articles/:userId/:classifyId/:pageNumber', function (req, res, next) {
+    var uid = req.params.userId;
+    var pageNumber = req.params.pageNumber;
+    var classifyId = req.params.classifyId;
+
+    userInformation.getById(uid, false).then(user => {
+        if (user == null) {
+            throw new Error('参数无效：操作的用户不存在。');
+        }
+        return articleInformation.getUserArticles(uid, classifyId, pageNumber).then(cache => {
             return articleInformation.getArticlesSummary(cache);
         }).then(list => {
             return res.send({
