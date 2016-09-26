@@ -22,10 +22,10 @@ var self = this;
         this avoids to process the older articles in the cache when pageNumber increases and make things easier.
     In the furture we could improve this.
 */
-exports.getFeedListByUserId = function (userId, pageNumber) {
+exports.getFeedListByUserId = function (userId, classifyId, pageNumber) {
     var startIndex = pageSize * pageNumber;
 
-    return feedCache.getFeedListByUserId(userId, startIndex, startIndex + pageSize - 1).then(res => {
+    return feedCache.getFeedListByUserId(userId, classifyId, startIndex, startIndex + pageSize - 1).then(res => {
         if (res)  // If no cache, res will be null. If res.length = 0, no feeds avaiable
             // If cache hits, simply return.
             if (res.length == 0) {
@@ -35,8 +35,8 @@ exports.getFeedListByUserId = function (userId, pageNumber) {
             }
         else {
             // No cache avaiable, search in DB.
-            return self.getFeedsFromDb(userId, 0, maxFeedCount).then(feeds => {
-                feedCache.setFeedList(userId, feeds).then(res => {
+            return self.getFeedsFromDb(userId, classifyId, 0, maxFeedCount).then(feeds => {
+                feedCache.setFeedList(userId, classifyId, feeds).then(res => {
                     logger.trace('Feed list for user id: ' + userId + ' successfully wrote to cache with count: ' + feeds.length);
                 }).catch(err => {
                     logger.error('Set feed list cache for user id: ' + userId + ' FAILED: ' + err);
@@ -48,7 +48,7 @@ exports.getFeedListByUserId = function (userId, pageNumber) {
     }).catch(err => {
         // There is an error while accessing the cache, log it and search in DB
         logger.error('Failed to get feed list from cache: ' + err);
-        return self.getFeedsFromDb(userId, startIndex, pageSize).then(feeds => {
+        return self.getFeedsFromDb(userId, classifyId, startIndex, pageSize).then(feeds => {
             return common.getRangeOfArray(feeds, 0, pageSize - 1);
         });
     });
@@ -61,14 +61,16 @@ exports.getFeedListByUserId = function (userId, pageNumber) {
 var getFeedsRawQuery = `
 SELECT a.id, a.author, a.createTime FROM UserFeed uf
     INNER JOIN suit AS a ON a.author = uf.feedUserId
+    INNER JOIN suit_classify sc ON sc.suitId = a.id
 WHERE
-    uf.userId = ? AND a.auditStatus = ?
+    uf.userId = ? AND a.auditStatus = ? AND (? = 0 OR sc.classifyId = ?)
 ORDER BY a.createTime DESC
 LIMIT ?, ?;
 `;
-exports.getFeedsFromDb = function (userId, startIndex, count) {
+exports.getFeedsFromDb = function (userId, classifyId, startIndex, count) {
+    classifyId = parseInt(classifyId);
     return sequelize.query(getFeedsRawQuery, {
-        replacements: [userId, approvedArticleStatus, startIndex, count],
+        replacements: [userId, approvedArticleStatus, classifyId, classifyId, startIndex, count],
         type: sequelize.QueryTypes.SELECT
     }).then(results => {
         return results;

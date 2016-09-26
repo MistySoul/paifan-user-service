@@ -6,12 +6,7 @@ var feedInformation = require('../business_logic/feed_information');
 var articleInformation = require('../business_logic/article_information');
 var Q = require('q');
 
-/*
-    Gets the latest articles (activities and live in the furture) that the user has been subscribed.
-    Parameters: userId, pageNumber
-    Response: an array of the latest articles in descending order.
-*/
-router.get('/list/:userId/:pageNumber', function(req, res, next) {
+var getFeedList = function(userId, classifyId, pageNumber) {
     /*
         Steps:
             1. Do a quick look in our cache to see whether we have cached it already. if so, simply return.
@@ -20,20 +15,42 @@ router.get('/list/:userId/:pageNumber', function(req, res, next) {
         
         Note if the user subscribe/unsubscribe someone, the cache is no longer valid and needs to be refreshed.
     */
-    var userId = req.params.userId;
-    var pageNumber = parseInt(req.params.pageNumber);
 
-    userInformation.getById(userId, true).then(user => {
+    return userInformation.getById(userId, true).then(user => {
         if (user == null || user.status != meta['active-user-status-id']) {
             throw new Error('参数无效：操作的用户不存在或已被停用。');
         }
-        return feedInformation.getFeedListByUserId(userId, pageNumber);
+        return feedInformation.getFeedListByUserId(userId, classifyId, pageNumber);
     }).then(cache => {
         // Gets the summary of these articles
         return articleInformation.getArticlesSummary(cache);
     }).then(summaries => {
         return articleInformation.writeUserInformation(summaries);
-    }).then(list => {
+    });
+};
+
+/*
+    Gets the latest articles (activities and live in the furture) that the user has been subscribed.
+    Parameters: userId, pageNumber
+    Response: an array of the latest articles in descending order.
+*/
+router.get('/list/:userId/:pageNumber', function(req, res, next) {
+    var userId = req.params.userId;
+    var pageNumber = parseInt(req.params.pageNumber);
+
+    return getFeedList(userId, 0, pageNumber).then(list => {
+        res.send({articles: list});
+    }).catch(err => {
+        return next(err);
+    });
+});
+
+router.get('/list/:userId/:classifyId/:pageNumber', function(req, res, next) {
+    var userId = req.params.userId;
+    var classifyId = req.params.classifyId;
+    var pageNumber = parseInt(req.params.pageNumber);
+
+    return getFeedList(userId, classifyId, pageNumber).then(list => {
         res.send({articles: list});
     }).catch(err => {
         return next(err);

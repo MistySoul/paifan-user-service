@@ -129,7 +129,7 @@ exports.setUserInformation = function (userId, information) {
 };
 
 exports.getUserInformation = function (userId) {
-    var key = getUserInformationKey(key);
+    var key = getUserInformationKey(userId);
 
     return redis.existsAsync(key).then(exists => {
         if (exists !== 1)
