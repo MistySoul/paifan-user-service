@@ -59,7 +59,7 @@ exports.getFeedListByUserId = function (userId, classifyId, pageNumber) {
     In the future, we'll search datas in UserPublish table to seperate Articles and Users storage.
 */
 var getFeedsRawQuery = `
-SELECT a.id, a.author, a.createTime FROM UserFeed uf
+SELECT DISTINCT a.id, a.author, a.createTime FROM UserFeed uf
     INNER JOIN suit AS a ON a.author = uf.feedUserId
     INNER JOIN suit_classify sc ON sc.suitId = a.id
 WHERE
