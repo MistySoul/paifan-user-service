@@ -31,7 +31,10 @@ router.get('/articles/:userId/:pageNumber', function(req, res, next) {
             throw new Error('参数无效：操作的用户不存在。');
         }
         return articleInformation.getUserArticles(uid, 0, pageNumber).then(cache => {
-            return articleInformation.getArticlesSummary(cache);
+            return articleInformation.getArticlesSummary(cache).then(summaries => {
+                summaries.forEach((s, i) => { s.createTime = cache[i].createTime; } );
+                return summaries;
+            });
         }).then(list => {
             return res.send({
                 user: user,
@@ -53,7 +56,10 @@ router.get('/articles/:userId/:classifyId/:pageNumber', function (req, res, next
             throw new Error('参数无效：操作的用户不存在。');
         }
         return articleInformation.getUserArticles(uid, classifyId, pageNumber).then(cache => {
-            return articleInformation.getArticlesSummary(cache);
+            return articleInformation.getArticlesSummary(cache).then(summaries => {
+                summaries.forEach((s, i) => { s.createTime = cache[i].createTime; } );
+                return summaries;
+            });
         }).then(list => {
             return res.send({
                 user: user,

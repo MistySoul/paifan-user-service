@@ -23,7 +23,10 @@ var getFeedList = function(userId, classifyId, pageNumber) {
         return feedInformation.getFeedListByUserId(userId, classifyId, pageNumber);
     }).then(cache => {
         // Gets the summary of these articles
-        return articleInformation.getArticlesSummary(cache);
+        return articleInformation.getArticlesSummary(cache).then(summaries => {
+            summaries.forEach((s, i) => { s.createTime = cache[i].createTime; } );
+            return summaries;
+        });
     }).then(summaries => {
         return articleInformation.writeUserInformation(summaries);
     });
