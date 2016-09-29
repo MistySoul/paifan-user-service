@@ -58,6 +58,7 @@ exports.getFeedListByUserId = function (userId, classifyId, pageNumber) {
     Run a SQL to get the feed list.
     In the future, we'll search datas in UserPublish table to seperate Articles and Users storage.
 */
+/*  == Order by createTime SQL ==
 var getFeedsRawQuery = `
 SELECT DISTINCT a.id, a.author, a.createTime FROM UserFeed uf
     INNER JOIN suit AS a ON a.author = uf.feedUserId
@@ -66,6 +67,22 @@ WHERE
     uf.userId = ? AND a.auditStatus = ? AND (? = 0 OR sc.classifyId = ?)
 ORDER BY a.createTime DESC
 LIMIT ?, ?;
+`;*/
+var getFeedsRawQuery = `
+SELECT a.id, a.author, a.createTime, result.time FROM suit a
+INNER JOIN
+( SELECT * FROM (
+    SELECT MAX(sa.auditTime) AS time, sa.suitId AS id FROM suit AS ia
+        INNER JOIN UserFeed uf ON ia.author = uf.feedUserId
+        INNER JOIN suit_classify sc ON sc.suitId = ia.id
+        INNER JOIN suit_audit sa ON sa.suitId = ia.id
+    WHERE
+        uf.userId = ? AND ia.auditStatus = ? AND (? = 0 OR sc.classifyId = ?) AND sa.auditType = 3
+    GROUP BY sa.suitId
+    ORDER BY sa.auditTime DESC 
+) AS r) AS result ON a.id = result.id
+ORDER BY result.time DESC
+LIMIT ?,?
 `;
 exports.getFeedsFromDb = function (userId, classifyId, startIndex, count) {
     classifyId = parseInt(classifyId);

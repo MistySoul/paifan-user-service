@@ -31,7 +31,13 @@ exports.getById = function (userId, noSimplify) {
             //    we will refresh the article count until the cache expires.
             // In the future we will have to move away this to handle the article count in a seperate way.
             return articleInformation.getArticleCountFromDb(userId).then(count => {
+                if (information.dataValues) {
+                    // The cache will retrieve the dataValues property, so added it as well.
+                    information.dataValues.articleCount = count;
+                }
+
                 information.articleCount = count;
+
                 userCache.setUserInformation(userId, information).then(count => {
                     logger.trace('Write ' + count + ' object to user information cache.');
                 }).catch(err => {
