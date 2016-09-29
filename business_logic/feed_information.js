@@ -69,7 +69,7 @@ ORDER BY a.createTime DESC
 LIMIT ?, ?;
 `;*/
 var getFeedsRawQuery = `
-SELECT a.id, a.author, a.createTime, result.time FROM suit a
+SELECT a.id, a.author, result.time AS createTime FROM suit a
 INNER JOIN
 ( SELECT * FROM (
     SELECT MAX(sa.auditTime) AS time, sa.suitId AS id FROM suit AS ia

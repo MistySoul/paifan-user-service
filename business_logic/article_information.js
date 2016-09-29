@@ -151,12 +151,31 @@ exports.writeUserInformation = function (summaries) {
     This should be in UserPublish table.
     Since it hasn't implemented now, search the Article table instead.
 */
+/*
 var getUserArticlesRawQuery = `
+
 SELECT DISTINCT s.id, s.createTime FROM suit s
 INNER JOIN suit_classify sc ON s.id = sc.suitId
     WHERE author = ? AND auditStatus = ? AND (? = 0 OR sc.classifyId = ?)
 ORDER BY createTime DESC
 LIMIT ?, ?;
+`;*/
+var getUserArticleCountRawQuery = `
+SELECT a.id, a.author, result.time AS createTime FROM suit a
+INNER JOIN
+(
+    SELECT * FROM (
+        SELECT MAX(sa.auditTime) AS time, sa.suitId AS id FROM suit AS ia
+            INNER JOIN suit_classify sc ON sc.suitId = ia.id
+            INNER JOIN suit_audit sa ON sa.suitId = ia.id
+        WHERE
+            ia.author = ? AND auditStatus = ? AND (? = 0 OR sc.classifyId = ?)
+        GROUP BY sa.suitId
+        ORDER BY sa.auditTime DESC
+    ) AS r
+) AS result ON a.id = result.id
+ORDER BY result.time DESC
+LIMIT ?, ?
 `;
 exports.getUserArticlesFromDb = function (userId, classifyId, startIndex, count) {
     classifyId = parseInt(classifyId);
