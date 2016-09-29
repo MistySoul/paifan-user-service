@@ -160,7 +160,7 @@ INNER JOIN suit_classify sc ON s.id = sc.suitId
 ORDER BY createTime DESC
 LIMIT ?, ?;
 `;*/
-var getUserArticleCountRawQuery = `
+var getUserArticlesRawQuery = `
 SELECT a.id, a.author, result.time AS createTime FROM suit a
 INNER JOIN
 (
