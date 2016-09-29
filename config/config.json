@@ -6,7 +6,9 @@
         "processNewArticleOn": false,
         "pageSize": 10,
         "maxFeedCount": 500,
-        "httpTimeout": 16000
+        "httpTimeout": 16000,
+        "feedPictureUrlQueryString": "?imageMogr2/thumbnail/320x320/format/jpg/q/80/strip",
+        "feedAuthorAvatarUrlQueryString": "?imageMogr2/thumbnail/80x80/format/jpg/q/80/strip"
     },
     "mysql-connection": {
         "development": {

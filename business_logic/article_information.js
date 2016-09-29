@@ -48,9 +48,19 @@ exports.getArticlesSummary = function (articleCacheArray) {
         //Send a request to the Article Service to get the summary of uncached articles.
         if (uncachedArticleIds.length > 0) {
             return articleService.requestArticlesSummary(uncachedArticleIds).then(summaries => {
+                var feedPictureQueryString = config['feedPictureUrlQueryString'];
+                var avatarQueryString = config['feedAuthorAvatarUrlQueryString'];
+
                 var cacheWritePromises = [];
                 // Put the articles to the cache
                 summaries.forEach(s => {
+                    // Add an query string to the picture url to reduce picture size.
+                    if (s.cover) 
+                        s.cover += feedPictureQueryString;
+                    
+                    if (s.authorAvatar) 
+                        s.authorAvatar += avatarQueryString;
+                    
                     cacheWritePromises.push(articleCache.setArticleSummary(s, s.id));
 
                     // Place it to the result array
