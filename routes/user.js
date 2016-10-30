@@ -22,6 +22,30 @@ router.get('/:id', function(req, res, next) {
     });
 });
 
+router.get('/articles/completed/:userId/:pageNumber', function(req, res, next) {
+    var uid = req.params.userId;
+    var pageNumber = req.params.pageNumber;
+
+    userInformation.getById(uid, false).then(user => {
+        if (user == null) {
+            throw new Error('参数无效：操作的用户不存在。');
+        }
+        return articleInformation.getCompletedUserArticlesByPublishTime(uid, 0, pageNumber).then(cache => {
+            return articleInformation.getArticlesSummary(cache).then(summaries => {
+                summaries.forEach((s, i) => { s.createTime = cache[i].createTime; } );
+                return summaries;
+            });
+        }).then(list => {
+            return res.send({
+                user: user,
+                articles: list
+            });
+        });
+    }).catch(err => {
+        return next(err);
+    });
+});
+
 router.get('/articles/:userId/:pageNumber', function(req, res, next) {
     var uid = req.params.userId;
     var pageNumber = req.params.pageNumber;
@@ -56,6 +80,31 @@ router.get('/articles/:userId/:classifyId/:pageNumber', function (req, res, next
             throw new Error('参数无效：操作的用户不存在。');
         }
         return articleInformation.getUserArticles(uid, classifyId, pageNumber).then(cache => {
+            return articleInformation.getArticlesSummary(cache).then(summaries => {
+                summaries.forEach((s, i) => { s.createTime = cache[i].createTime; } );
+                return summaries;
+            });
+        }).then(list => {
+            return res.send({
+                user: user,
+                articles: list
+            });
+        });
+    }).catch(err => {
+        return next(err);
+    });
+});
+
+router.get('/articles/completed/:userId/:classifyId/:pageNumber', function (req, res, next) {
+    var uid = req.params.userId;
+    var pageNumber = req.params.pageNumber;
+    var classifyId = req.params.classifyId;
+
+    userInformation.getById(uid, false).then(user => {
+        if (user == null) {
+            throw new Error('参数无效：操作的用户不存在。');
+        }
+        return articleInformation.getCompletedUserArticlesByPublishTime(uid, classifyId, pageNumber).then(cache => {
             return articleInformation.getArticlesSummary(cache).then(summaries => {
                 summaries.forEach((s, i) => { s.createTime = cache[i].createTime; } );
                 return summaries;

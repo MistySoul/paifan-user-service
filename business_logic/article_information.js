@@ -87,7 +87,8 @@ exports.getArticlesSummary = function (articleCacheArray) {
             
     }).then(articleCacheArray => {
         var summaries = [];
-        articleCacheArray.forEach(c => summaries.push(c.summary), this);
+        // Some article summary may be avaiable for some reason, just ignore it.
+        articleCacheArray.forEach(c => { if (c) summaries.push(c.summary); }, this);
 
         return summaries;
     }).catch(err => {
@@ -98,6 +99,7 @@ exports.getArticlesSummary = function (articleCacheArray) {
 
 /**
  *  Gets the latest articles (only ids) published by the user.
+ *  This will only include approved articles and sort them by last approved time. (For app use only currently)
  *  
  *  Steps:
  *      1. Search the list in the user cache, if hits, simple return.
@@ -131,7 +133,40 @@ exports.getUserArticles = function (userId, classifyId, pageNumber) {
             return common.getRangeOfArray(articles, 0, pageSize - 1);
         });
     });
-}
+};
+
+/**
+ * Gets the completed articles for a specified user (including Pending and Rejected), order them by published time.
+ */
+exports.getCompletedUserArticlesByPublishTime = function (userId, classifyId, pageNumber) {
+    classifyId = classifyId || 0;
+    pageNumber = parseInt(pageNumber);
+
+    var startIndex = pageNumber * pageSize;
+    
+    return userCache.getUserArticlesByUserId(userId, classifyId, startIndex, startIndex + pageSize - 1, "completed").then(articles => {
+        if (articles != null)  // Cache hits, return it.
+            return common.getRangeOfArray(articles, 0, articles.length - 1, true);
+        else {
+            //Search in DB and store it in cache. Hard code the count now...
+            return self.getUserArticlesByPublishTime(userId, classifyId, 0, 500).then(articles => {
+                userCache.setUserArticlesList(userId, classifyId, articles, "completed").then(res => {
+                    logger.trace('User article list for user id: ' + userId + ' successfully wrote to cache with count: ' + articles.length);
+                }).catch(err => {
+                    logger.error('Set article list cache for user id: ' + userId + ' FAILED: ' + err);
+                });
+
+                return common.getRangeOfArray(articles, startIndex, startIndex + pageSize - 1);
+            });
+        }
+    }).catch(err => {
+        // There is an error while accessing the cache, log it and search in DB
+        logger.error('Failed to get article list from cache: ' + err);
+        return self.getUserArticlesByPublishTime(userId, classifyId, startIndex, pageSize).then(articles => {
+            return common.getRangeOfArray(articles, 0, pageSize - 1);
+        });
+    });
+};
 
 /**
  * According to "author" field in the summary, fill the corresponding user information to the nested object.
@@ -146,6 +181,29 @@ exports.writeUserInformation = function (summaries) {
         return summaries;
     });
 }
+
+var getUserArticlesByPublishTimeRawQuery = `
+SELECT DISTINCT s.id, s.createTime FROM suit s
+INNER JOIN suit_classify sc ON s.id = sc.suitId
+    WHERE author = ? AND auditStatus IN (1, 2, 4) AND (? = 0 OR sc.classifyId = ?)
+ORDER BY createTime DESC
+LIMIT ?, ?;
+`;
+/**
+ * Find all articles the user published (including Pending and Rejected), order them by publish time.
+ * This is used for Weixin page now.
+ */
+exports.getUserArticlesByPublishTime = function (userId, classifyId, startIndex, count) {
+    classifyId = parseInt(classifyId);
+    userId = parseInt(userId);
+
+    return sequelize.query(getUserArticlesByPublishTimeRawQuery, {
+        replacements: [userId, classifyId, classifyId, startIndex, count],
+        type: sequelize.QueryTypes.SELECT
+    }).then(results => {
+        return results;
+    });
+};
 
 /*
     This should be in UserPublish table.

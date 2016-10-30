@@ -16,8 +16,10 @@ module.exports = function (sequelize, DataTypes) {
     var UserPublish = sequelize.define('UserPublish', {
         userId: {
             type: DataTypes.INTEGER,
-            references: 's_user',
-            referencesKey: 'id'
+            references: {
+                model: 's_user',
+                referencesKey: 'id'
+            }
         },
         publisherType: DataTypes.INTEGER,
         publisherId: DataTypes.INTEGER,

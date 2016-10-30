@@ -6,13 +6,17 @@ module.exports = function (sequelize, DataTypes) {
     var UserFeed = sequelize.define('UserFeed', {
         userId: {
             type: DataTypes.INTEGER,
-            references: 's_user',
-            referencesKey: 'id'
+            references: {
+                model: 's_user',
+                key: 'id'
+            }
         },
         feedUserId: {
             type: DataTypes.INTEGER,
-            references: 's_user',
-            referencesKey: 'id'
+            references: {
+                model:  's_user',
+                key: 'id'
+            }
         }
     }, {
         freezeTableName: true,

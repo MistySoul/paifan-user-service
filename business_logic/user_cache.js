@@ -7,11 +7,21 @@ var common = require('./common');
 
 var self = this;
 
-var getUserArticlesKey = function (userId, classifyId) {
+/**
+ * Tag is used to add an appendix for the key.
+ */
+var getUserArticlesKey = function (userId, classifyId, tag) {
+    var key;
+
     if (classifyId == 0 || classifyId == undefined) {
-        return 'user-articles:' + userId;
+        key = 'user-articles:' + userId;
     }
-    return 'user-articles:' + userId + ',classifyId:' + classifyId;
+    key = 'user-articles:' + userId + ',classifyId:' + classifyId;
+
+    if (tag == undefined || tag == null) {
+        return key;
+    }
+    return key + "tag:" + tag;
 };
 
 var getUserInformationKey = function (userId) {
@@ -34,8 +44,8 @@ var getUserSubscribersCountKey = function (userId) {
                 classifyId: if 0, fetches all articles for this user.
     Returns: An object array [{articleId, createTime}], or null (not empty list!) if not in cache.
 */
-exports.getUserArticlesByUserId = function (userId, classifyId, startIndex, endIndex) {
-    var key = getUserArticlesKey(userId, classifyId);
+exports.getUserArticlesByUserId = function (userId, classifyId, startIndex, endIndex, tag) {
+    var key = getUserArticlesKey(userId, classifyId, tag);
 
     return redis.existsAsync(key).then(exists => {
         if (exists !== 1)
@@ -63,8 +73,8 @@ exports.getUserArticlesByUserId = function (userId, classifyId, startIndex, endI
     });
 };
 
-exports.setUserArticlesList = function (userId, classifyId, articles) {
-    var key = getUserArticlesKey(userId, classifyId);
+exports.setUserArticlesList = function (userId, classifyId, articles, tag) {
+    var key = getUserArticlesKey(userId, classifyId, tag);
 
     return redis.rpushAsync(key, common.jsonifyArray(articles)).then(count => {
         return redis.expireAsync(key, expireTime).then(res => {
